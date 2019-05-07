@@ -1,6 +1,7 @@
 package org.superbiz.moviefun;
 
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
+import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
@@ -8,6 +9,7 @@ import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfigurat
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.Database;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
@@ -16,6 +18,7 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionStatus;
 
+import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import java.util.Properties;
 
@@ -35,6 +38,8 @@ public class Application {
         this.transactionManager = txManager;
     }
 
+
+
     @Bean
     public ServletRegistrationBean actionServletRegistration(ActionServlet actionServlet) {
         return new ServletRegistrationBean(actionServlet, "/moviefun/*");
@@ -47,15 +52,17 @@ public class Application {
 
     @Bean
     public DataSource albumsDataSource(DatabaseServiceCredentials serviceCredentials) {
-        MysqlDataSource dataSource = new MysqlDataSource();
-        dataSource.setURL(serviceCredentials.jdbcUrl("albums-mysql"));
+        HikariDataSource dataSource = new HikariDataSource();
+//        MysqlDataSource dataSource = new MysqlDataSource();
+        dataSource.setJdbcUrl(serviceCredentials.jdbcUrl("albums-mysql"));
         return dataSource;
     }
 
     @Bean
     public DataSource moviesDataSource(DatabaseServiceCredentials serviceCredentials) {
-        MysqlDataSource dataSource = new MysqlDataSource();
-        dataSource.setURL(serviceCredentials.jdbcUrl("movies-mysql"));
+        HikariDataSource dataSource = new HikariDataSource();
+//        MysqlDataSource dataSource = new MysqlDataSource();
+        dataSource.setJdbcUrl(serviceCredentials.jdbcUrl("movies-mysql"));
         return dataSource;
     }
 
@@ -71,7 +78,7 @@ public class Application {
     }
 
     @Bean
-    public LocalContainerEntityManagerFactoryBean albumsEntityManagerFactoryBean(DataSource albumsDataSource, HibernateJpaVendorAdapter vendorAdapter) {
+    public LocalContainerEntityManagerFactoryBean albumsEntityManagerFactory(DataSource albumsDataSource, HibernateJpaVendorAdapter vendorAdapter) {
         LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
         factoryBean.setDataSource(albumsDataSource);
         factoryBean.setJpaVendorAdapter(vendorAdapter);
@@ -81,7 +88,7 @@ public class Application {
     }
 
     @Bean
-    public LocalContainerEntityManagerFactoryBean moviesEntityManagerFactoryBean(DataSource moviesDataSource, HibernateJpaVendorAdapter vendorAdapter) {
+    public LocalContainerEntityManagerFactoryBean moviesEntityManagerFactory(DataSource moviesDataSource, HibernateJpaVendorAdapter vendorAdapter) {
         LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
         factoryBean.setDataSource(moviesDataSource);
         factoryBean.setJpaVendorAdapter(vendorAdapter);
@@ -91,22 +98,16 @@ public class Application {
     }
 
     @Bean
-    public PlatformTransactionManager albumsTransactionManager(LocalContainerEntityManagerFactoryBean  albumsEntityManagerFactoryBean){
-        return new PlatformTransactionManager() {
-            @Override
-            public TransactionStatus getTransaction(TransactionDefinition transactionDefinition) throws TransactionException {
-                return null;
-            }
+    public PlatformTransactionManager albumsTransactionManager(EntityManagerFactory albumsEntityManagerFactory){
+        JpaTransactionManager albumsTransationManager = new JpaTransactionManager();
+        albumsTransationManager.setEntityManagerFactory(albumsEntityManagerFactory);
+        return albumsTransationManager;
+    }
 
-            @Override
-            public void commit(TransactionStatus transactionStatus) throws TransactionException {
-
-            }
-
-            @Override
-            public void rollback(TransactionStatus transactionStatus) throws TransactionException {
-
-            }
-        }
+    @Bean
+    public PlatformTransactionManager moviesTransactionManager(EntityManagerFactory moviesEntityManagerFactory){
+        JpaTransactionManager moviesTransactionManager = new JpaTransactionManager();
+        moviesTransactionManager.setEntityManagerFactory(moviesEntityManagerFactory);
+        return moviesTransactionManager;
     }
 }
