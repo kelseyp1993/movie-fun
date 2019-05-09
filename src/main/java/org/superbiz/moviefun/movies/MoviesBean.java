@@ -44,7 +44,7 @@ public class MoviesBean {
     public void addMovie(Movie movie) {
 //        System.err.println("Creating movie with title " + movie.getTitle() +
 //            ", and year " + movie.getYear());
-        logger.debug("Creating movie with title {}, and year ", movie.getTitle(), movie.getYear());
+        logger.debug("Creating movie with title {}, and year {}", movie.getTitle(), movie.getYear());
 
         entityManager.persist(movie);
     }
